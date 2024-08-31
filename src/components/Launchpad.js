@@ -39,7 +39,7 @@ const Launchpad = () => {
             const mintAuthority = wallet.publicKey;
             const freezeAuthority = wallet.publicKey;
     
-            // Ensure mintAuthority and freezeAuthority are valid
+           
             if (!mintAuthority || !freezeAuthority) {
                 alert("Invalid mint or freeze authority.");
                 return;
@@ -47,11 +47,11 @@ const Launchpad = () => {
     
             const mintToken = await createMint(
                 connection,
-                wallet, // This should be a signer, ensure wallet can sign
+                wallet, 
                 mintAuthority,
                 freezeAuthority,
                 parseInt(formData.decimals),
-                mint // This Keypair should be the mint authority
+                mint 
             );
     
             const tokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -66,7 +66,7 @@ const Launchpad = () => {
                 wallet,
                 mintToken,
                 tokenAccount.address,
-                wallet, // Make sure wallet can sign, or pass a signer explicitly
+                wallet, 
                 parseInt(formData.suply) * Math.pow(10, parseInt(formData.decimals))
             );
     

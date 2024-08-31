@@ -1,5 +1,3 @@
-// src/adapters/CustomWalletAdapter.js
-
 import { BaseMessageSignerWalletAdapter, WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import { PublicKey, Transaction } from '@solana/web3.js';
 
