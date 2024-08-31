@@ -1,0 +1,251 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f0f4ff;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Main application container */
+.App {
+  text-align: center;
+  width: 90%;
+  max-width: 900px;
+  padding: 20px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-radius: 12px;
+}
+
+/* Wallet connection button styling */
+.wallet-adapter-button {
+  font-size: 18px;
+  padding: 15px 30px;
+  margin-bottom: 10px;
+  background-image: linear-gradient(45deg, #6a11cb, #2575fc);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.wallet-adapter-button span {
+  margin-left: 5px;
+}
+
+.wallet-adapter-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 255, 0.2);
+}
+
+/* Adjusting icon sizes and spacing */
+.wallet-adapter-button-start-icon img {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+}
+
+/* Header styles */
+h1 {
+  color: #32325d;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Dashboard and Transactions table styling */
+.dashboard {
+  margin-top: 20px;
+}
+
+/* Remove bullet points */
+ul, ol {
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* Transactions table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  table-layout: fixed; /* Ensure table doesn't blow out */
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  word-wrap: break-word; /* Wrap text within cells */
+  overflow-wrap: break-word; /* Additional support for text wrapping */
+  vertical-align: middle; /* Align content vertically */
+  box-sizing: border-box; /* Ensure padding is included in width/height */
+}
+
+th {
+  background-color: #f2f2f2;
+  text-align: left;
+  position: relative;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #ddd;
+}
+
+/* Dropdown (Select) styling within table headers */
+th select {
+  width: 100%;
+  padding: 5px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* Icon button within table cells */
+.IconButton {
+  padding: 5px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Button styling enhancements */
+button {
+  margin: 5px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #2575fc;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+button:hover {
+  background-color: #1a5bb8;
+  transform: scale(1.03);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Enhancing the 'Less options' button */
+.wallet-adapter-modal-list-more {
+  background-color: #34c759;
+  color: white;
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  width: auto;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+/* Text and link adjustments */
+.dashboard a, .wallet-adapter-button {
+  text-transform: none;
+  word-spacing: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Input fields styling */
+input[type="text"], input[type="number"] {
+  padding: 12px;
+  margin-top: 12px;
+  width: 100%;
+  border: 2px solid #bdbdbd;
+  border-radius: 6px;
+}
+
+input[type="text"]:focus, input[type="number"]:focus {
+  border-color: #2962ff;
+  outline: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .App {
+    width: 95%;
+    padding: 20px;
+  }
+
+  table, th, td {
+    font-size: 14px;
+  }
+}
+
+/* Error and success messages */
+.error-message, .success-message {
+  color: white;
+  background-color: #ff5252;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.success-message {
+  background-color: #00e676;
+}
+
+/* Additional Styles for Portfolio Tab */
+/* Portfolio tab styles */
+.tab-buttons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tab-buttons button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.actions .icon {
+  margin-left: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.actions .icon:hover {
+  color: #2575fc;
+}
+
+/* Portfolio section */
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 0;
+}
