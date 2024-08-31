@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, clusterApiUrl, Keypair, Transaction } from '@solana/web3.js';
-import { Token, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Web3Storage } from 'web3.storage';
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createMint, mintTo, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
 
 const Launchpad = () => {
     const wallet = useWallet();
@@ -11,30 +10,14 @@ const Launchpad = () => {
         supply: '',
         decimals: 0,
         telegramLink: '',
-        twitterLink: '',
-        imageFile: null
+        twitterLink: ''
     });
     const [createdTokens, setCreatedTokens] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Initialize Web3.Storage client with your token
-    const client = new Web3Storage({ token: 'z6MkmQquwi9tAyR5gH2435oVQ7iaiobCXvRa7kK9EVXzkeiT' });
-
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleFileChange = (event) => {
-        setFormData(prev => ({ ...prev, imageFile: event.target.files[0] }));
-    };
-
-    const uploadToIPFS = async (file) => {
-        const cid = await client.put([file], {
-            name: file.name,
-            maxRetries: 3
-        });
-        return `https://${cid}.ipfs.dweb.link/${file.name}`;
     };
 
     const createToken = async () => {
@@ -42,60 +25,65 @@ const Launchpad = () => {
             alert("Please connect your wallet.");
             return;
         }
-        if (!formData.imageFile) {
-            alert("Please upload an image for the token.");
+    
+        if (!wallet.publicKey || !wallet.signTransaction) {
+            alert("Wallet not fully initialized or lacks necessary permissions.");
             return;
         }
+    
         setLoading(true);
         const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-        const mint = Keypair.generate();
-
+    
         try {
-            // Upload image to IPFS first
-            const imageUrl = await uploadToIPFS(formData.imageFile);
-
-            const token = new Token(
+            const mint = Keypair.generate();
+            const mintAuthority = wallet.publicKey;
+            const freezeAuthority = wallet.publicKey;
+    
+            // Ensure mintAuthority and freezeAuthority are valid
+            if (!mintAuthority || !freezeAuthority) {
+                alert("Invalid mint or freeze authority.");
+                return;
+            }
+    
+            const mintToken = await createMint(
                 connection,
-                mint.publicKey,
-                TOKEN_PROGRAM_ID,
-                wallet  // Assumes wallet can sign transactions
+                wallet, // This should be a signer, ensure wallet can sign
+                mintAuthority,
+                freezeAuthority,
+                parseInt(formData.decimals),
+                mint // This Keypair should be the mint authority
             );
-
-            const tx = new Transaction().add(
-                Token.createCreateMintInstruction(
-                    TOKEN_PROGRAM_ID,
-                    mint.publicKey,
-                    parseInt(formData.decimals),
-                    wallet.publicKey,  // Mint authority
-                    wallet.publicKey   // Freeze authority
-                ),
-                Token.createMintToInstruction(
-                    TOKEN_PROGRAM_ID,
-                    mint.publicKey,
-                    await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mint.publicKey, wallet.publicKey),
-                    wallet.publicKey,  // Wallet public key as mint authority
-                    [],
-                    parseInt(formData.supply) * Math.pow(10, parseInt(formData.decimals))
-                )
+    
+            const tokenAccount = await getOrCreateAssociatedTokenAccount(
+                connection,
+                wallet,
+                mintToken,
+                wallet.publicKey
             );
-
-            const signature = await wallet.sendTransaction(tx, connection, {signers: [mint]});
-            await connection.confirmTransaction(signature, 'confirmed');
-
+    
+            await mintTo(
+                connection,
+                wallet,
+                mintToken,
+                tokenAccount.address,
+                wallet, // Make sure wallet can sign, or pass a signer explicitly
+                parseInt(formData.suply) * Math.pow(10, parseInt(formData.decimals))
+            );
+    
             setCreatedTokens([...createdTokens, {
                 mintAddress: mint.publicKey.toString(),
                 ticker: formData.ticker,
                 supply: formData.supply,
-                decimals: formData.decimals,
-                imageUrl: imageUrl
+                decimals: formData.decimals
             }]);
         } catch (error) {
             console.error('Error creating token:', error);
             alert('Failed to create token: ' + error.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
-
+    
     return (
         <div>
             <h1>Token Launchpad</h1>
@@ -104,7 +92,6 @@ const Launchpad = () => {
             <input type="number" name="decimals" value={formData.decimals} onChange={handleInputChange} placeholder="Decimals" />
             <input type="text" name="telegramLink" value={formData.telegramLink} onChange={handleInputChange} placeholder="Telegram Link" />
             <input type="text" name="twitterLink" value={formData.twitterLink} onChange={handleInputChange} placeholder="Twitter Link" />
-            <input type="file" onChange={handleFileChange} />
             <button onClick={createToken} disabled={loading}>Create Token</button>
             {loading && <p>Loading...</p>}
             <div>
@@ -116,7 +103,6 @@ const Launchpad = () => {
                             <th>Mint Address</th>
                             <th>Supply</th>
                             <th>Decimals</th>
-                            <th>Image</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,7 +112,6 @@ const Launchpad = () => {
                                 <td>{token.mintAddress}</td>
                                 <td>{token.supply}</td>
                                 <td>{token.decimals}</td>
-                                <td><img src={token.imageUrl} alt={token.ticker} style={{ width: '50px', height: '50px' }} /></td>
                             </tr>
                         ))}
                     </tbody>
