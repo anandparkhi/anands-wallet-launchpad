@@ -1,12 +1,22 @@
+/* eslint-env es2020 */
+
 import React, { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, clusterApiUrl, Keypair, Transaction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createMint, mintTo, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
+import { Connection, clusterApiUrl, Keypair, Transaction, SystemProgram } from '@solana/web3.js';
+import {
+    MINT_SIZE,
+    createInitializeMintInstruction,
+    getAssociatedTokenAddressSync,
+    createAssociatedTokenAccountInstruction,
+    createMintToInstruction,
+    TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 
 const Launchpad = () => {
     const wallet = useWallet();
     const [formData, setFormData] = useState({
         ticker: '',
+        name: '',
         supply: '',
         decimals: 0,
         telegramLink: '',
@@ -25,57 +35,91 @@ const Launchpad = () => {
             alert("Please connect your wallet.");
             return;
         }
-    
+
         if (!wallet.publicKey || !wallet.signTransaction) {
             alert("Wallet not fully initialized or lacks necessary permissions.");
             return;
         }
-    
+
         setLoading(true);
         const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-    
+
         try {
-            const mint = Keypair.generate();
-            const mintAuthority = wallet.publicKey;
-            const freezeAuthority = wallet.publicKey;
-    
-           
-            if (!mintAuthority || !freezeAuthority) {
-                alert("Invalid mint or freeze authority.");
-                return;
-            }
-    
-            const mintToken = await createMint(
-                connection,
-                wallet, 
-                mintAuthority,
-                freezeAuthority,
-                parseInt(formData.decimals),
-                mint 
+            const mintKeypair = Keypair.generate();
+
+            // Calculate the rent-exempt amount for the mint account
+            const lamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+
+            // Create a transaction to create and initialize the mint account
+            const transaction = new Transaction().add(
+                // Create the mint account
+                SystemProgram.createAccount({
+                    fromPubkey: wallet.publicKey,
+                    newAccountPubkey: mintKeypair.publicKey,
+                    space: MINT_SIZE,
+                    lamports,
+                    programId: TOKEN_PROGRAM_ID,
+                }),
+                // Initialize the mint account
+                createInitializeMintInstruction(
+                    mintKeypair.publicKey,
+                    parseInt(formData.decimals),
+                    wallet.publicKey, // Mint authority
+                    wallet.publicKey  // Freeze authority
+                )
             );
-    
-            const tokenAccount = await getOrCreateAssociatedTokenAccount(
-                connection,
-                wallet,
-                mintToken,
+
+            // Set transaction fee payer and recent blockhash
+            transaction.feePayer = wallet.publicKey;
+            transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+            // Partially sign the transaction with the mint keypair
+            transaction.partialSign(mintKeypair);
+
+            // Send the transaction
+            await wallet.sendTransaction(transaction, connection);
+
+            // Get the associated token account address
+            const associatedTokenAddress = getAssociatedTokenAddressSync(
+                mintKeypair.publicKey,
                 wallet.publicKey
             );
-    
-            await mintTo(
-                connection,
-                wallet,
-                mintToken,
-                tokenAccount.address,
-                wallet, 
-                parseInt(formData.suply) * Math.pow(10, parseInt(formData.decimals))
+
+            // Create a transaction to create the associated token account
+            const transaction2 = new Transaction().add(
+                createAssociatedTokenAccountInstruction(
+                    wallet.publicKey, // Payer
+                    associatedTokenAddress,
+                    wallet.publicKey, // Owner
+                    mintKeypair.publicKey
+                )
             );
-    
+
+            // Send the transaction
+            await wallet.sendTransaction(transaction2, connection);
+
+
+            // Create a transaction to mint tokens to the associated token account
+            const transaction3 = new Transaction().add(
+                createMintToInstruction(
+                    mintKeypair.publicKey,
+                    associatedTokenAddress,
+                    wallet.publicKey, // Mint authority
+                    BigInt(parseInt(formData.supply) * Math.pow(10, parseInt(formData.decimals)))
+                )
+            );
+
+            // Send the transaction
+            await wallet.sendTransaction(transaction3, connection);
+
+            // Update the state with the new token information
             setCreatedTokens([...createdTokens, {
-                mintAddress: mint.publicKey.toString(),
+                mintAddress: mintKeypair.publicKey.toString(),
                 ticker: formData.ticker,
                 supply: formData.supply,
                 decimals: formData.decimals
             }]);
+
         } catch (error) {
             console.error('Error creating token:', error);
             alert('Failed to create token: ' + error.message);
@@ -83,7 +127,7 @@ const Launchpad = () => {
             setLoading(false);
         }
     };
-    
+
     return (
         <div>
             <h1>Token Launchpad</h1>
@@ -105,6 +149,7 @@ const Launchpad = () => {
                             <th>Decimals</th>
                         </tr>
                     </thead>
+            
                     <tbody>
                         {createdTokens.map((token, index) => (
                             <tr key={index}>
