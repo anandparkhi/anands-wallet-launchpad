@@ -26,7 +26,7 @@ const Transactions = () => {
 
   // State for pagination
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -85,7 +85,7 @@ const Transactions = () => {
 
   // Handle rows per page change
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(parseInt(event.target.value, 5));
     setPage(0); // Reset to first page whenever rows per page changes
   };
 
